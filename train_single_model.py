@@ -1,5 +1,6 @@
 import argparse
 import datetime
+import json
 import os
 import pickle
 import numpy as np
@@ -8,41 +9,7 @@ import pandas as pd
 from keras.layers import Input, GRU, Dense
 from keras.models import Model
 from keras.callbacks import ModelCheckpoint, TensorBoard
-
-
-def mjd_to_row(mjd):
-    return mjd - 37665
-
-
-def generator(data, lookback, delay, min_index, max_index, shuffle=False, batch_size=128, step=1):
-    if max_index is None:
-        max_index = len(data) - delay - 1
-    i = min_index + lookback
-    while 1:
-        if shuffle:
-            rows = np.random.randint(
-                min_index + lookback, max_index, size=batch_size)
-        else:
-            if i + batch_size >= max_index:
-                i = min_index + lookback
-            rows = np.arange(i, min(i + batch_size, max_index))
-            i += len(rows)
-
-        samples = np.zeros((len(rows),
-                            lookback // step,
-                            2))
-        targets_x = np.zeros((len(rows), delay))
-        targets_y = np.zeros((len(rows), delay))
-        # targets_lod = np.zeros((len(rows), delay))
-        for j, row in enumerate(rows):
-            indices = range(rows[j] - lookback, rows[j], step)
-            samples[j] = np.reshape(data[indices], (lookback, 2))
-            targets_x[j] = data[rows[j]:rows[j] + delay, 0]
-            targets_y[j] = data[rows[j]:rows[j] + delay, 1]
-            # targets_lod[j] = data[rows[j]:rows[j] + delay, 2]
-
-        # yield samples, [targets_x, targets_y, targets_lod]
-        yield samples, [targets_x, targets_y]
+from ts_helper import mjd_to_row, single_model_generator
 
 
 def main():
@@ -84,9 +51,6 @@ def main():
     n_train = mjd_to_row(56292)  # 31.12.2012 (end of training period)
     n_val = mjd_to_row(57022) - mjd_to_row(56292)  # 31.12.2012 - 31.12.2014 (validation period)
 
-    # test period should not last over October 2017
-    # n_test = len(data) - n_train - n_val
-
     mean_data = data[:n_train].mean(axis=0)  # calculate on train data
     data -= mean_data  # transform all data
     std_data = data[:n_train].std(axis=0)
@@ -94,30 +58,30 @@ def main():
 
     np.savetxt(os.path.join(checkpoint_dir, "norm_single_model.csv"), np.array([mean_data, std_data]), delimiter=',')
 
+    params = {'lookback' : args.lookback,
+              'delay' : args.delay,
+              'step' : args.timestep}
+
+    with open(os.path.join(checkpoint_dir, "params.json"), 'w') as outfile:
+        json.dump(params, outfile)
+
     batch_size = args.batch_size
 
-    train_gen = generator(data,
-                          lookback=args.lookback,
-                          delay=args.delay,
-                          min_index=0,
-                          max_index=n_train,
-                          shuffle=True,
-                          step=args.timestep,
-                          batch_size=batch_size)
-    val_gen = generator(data,
-                        lookback=args.lookback,
-                        delay=args.delay,
-                        min_index=n_train + 1 - args.lookback,
-                        max_index=n_train + n_val,
-                        step=args.timestep,
-                        batch_size=batch_size)
-    # test_gen = generator(data,
-    #                      lookback=args.lookback,
-    #                      delay=args.delay,
-    #                      min_index=n_train + n_val + 1 - args.lookback,
-    #                      max_index=None,
-    #                      step=args.timestep,
-    #                      batch_size=batch_size)
+    train_gen = single_model_generator(data,
+                                       lookback=args.lookback,
+                                       delay=args.delay,
+                                       min_index=0,
+                                       max_index=n_train,
+                                       shuffle=True,
+                                       step=args.timestep,
+                                       batch_size=batch_size)
+    val_gen = single_model_generator(data,
+                                     lookback=args.lookback,
+                                     delay=args.delay,
+                                     min_index=n_train + 1 - args.lookback,
+                                     max_index=n_train + n_val,
+                                     step=args.timestep,
+                                     batch_size=batch_size)
 
     # This is how many steps to draw from val_gen in order to see the whole validation set:
     val_steps = (n_val - 1) // batch_size
