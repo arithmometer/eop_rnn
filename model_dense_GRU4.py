@@ -13,7 +13,7 @@ def main():
     net_input = Input(shape=(args.lookback, 2))
     
     x = Dense(300, activation='relu')(net_input)
-    x = GRU(args.ncells, return_sequences=True, dropout=args.dropout, recurrent_dropout=args.recurrent_dropout)(x)
+    x = Dense(args.ncells, activation='relu')(x)
     x = GRU(args.ncells, return_sequences=True, dropout=args.dropout, recurrent_dropout=args.recurrent_dropout)(x)
     x = GRU(args.ncells, dropout=args.dropout, recurrent_dropout=args.recurrent_dropout)(x)
 

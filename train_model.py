@@ -16,7 +16,7 @@ def parse_args():
     # Training settings
     parser = argparse.ArgumentParser(description='EOP prediction using RNN')
     parser.add_argument('--ncells', type=int, default=256, metavar='NC',
-                        help='number of recurrent units in a layer (default: 64)')
+                        help='number of recurrent units in a layer (default: 256)')
     parser.add_argument('--batch-size', type=int, default=64, metavar='BS',
                         help='input batch size for training (default: 64)')
     parser.add_argument('--epochs', type=int, default=50, metavar='E',
@@ -29,10 +29,10 @@ def parse_args():
                         help='timesteps to predict (default: 30)')
     parser.add_argument('--timestep', type=int, default=1, metavar='TS',
                         help='window time step (default: 1)')
-    parser.add_argument('--dropout', type=float, default=0.2, metavar='D',
-                        help='dropout rate (default: 0.2)')
-    parser.add_argument('--recurrent_dropout', type=float, default=0.2, metavar='RD',
-                        help='recurrent dropout rate (default: 0.2)')
+    parser.add_argument('--dropout', type=float, default=0.0, metavar='D',
+                        help='dropout rate (default: 0.0)')
+    parser.add_argument('--recurrent_dropout', type=float, default=0.0, metavar='RD',
+                        help='recurrent dropout rate (default: 0.0)')
     args = parser.parse_args()
     return args
 
@@ -41,7 +41,7 @@ def train_model(model, args, nlayers, cell_type):
     c04 = pd.read_csv(os.path.join("data", "eopc04_14_IAU2000.62-now.csv"), delimiter=";")
 
     strtime = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    checkpoint_dir = os.path.join("checkpoints_single_model",
+    checkpoint_dir = os.path.join("checkpoints",
                                   cell_type,
                                   str(nlayers) + "layers",
                                   str(args.ncells) + "cells",
