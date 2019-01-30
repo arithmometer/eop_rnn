@@ -8,14 +8,14 @@ import pandas as pd
 import tensorflow as tf
 
 from keras import backend as k
-from keras.callbacks import ModelCheckpoint, TensorBoard, EarlyStopping
+from keras.callbacks import ModelCheckpoint, TensorBoard, ReduceLROnPlateau, EarlyStopping
 from helpers import mjd_to_row, single_model_generator
 
 
 def parse_args():
     # Training settings
     parser = argparse.ArgumentParser(description='EOP prediction using RNN')
-    parser.add_argument('--ncells', type=int, default=64, metavar='NC',
+    parser.add_argument('--ncells', type=int, default=256, metavar='NC',
                         help='number of recurrent units in a layer (default: 64)')
     parser.add_argument('--batch-size', type=int, default=64, metavar='BS',
                         help='input batch size for training (default: 64)')
@@ -23,10 +23,10 @@ def parse_args():
                         help='number of epochs to train (default: 50)')
     parser.add_argument('--steps', type=int, default=100, metavar='S',
                         help='number of steps per epoch (default: 100)')
-    parser.add_argument('--lookback', type=int, default=430, metavar='L',
-                        help='lookback window (default: 430)')
-    parser.add_argument('--delay', type=int, default=365, metavar='D',
-                        help='timesteps to predict (default: 365)')
+    parser.add_argument('--lookback', type=int, default=860, metavar='L',
+                        help='lookback window (default: 860)')
+    parser.add_argument('--delay', type=int, default=30, metavar='D',
+                        help='timesteps to predict (default: 30)')
     parser.add_argument('--timestep', type=int, default=1, metavar='TS',
                         help='window time step (default: 1)')
     parser.add_argument('--dropout', type=float, default=0.2, metavar='D',
@@ -45,9 +45,8 @@ def train_model(model, args, nlayers, cell_type):
                                   cell_type,
                                   str(nlayers) + "layers",
                                   str(args.ncells) + "cells",
-                                  strtime,
-                                  cell_type + str(nlayers) + str(args.ncells))  # last directory for Tensorboard
-    log_dir = os.path.join("log", strtime)
+                                  strtime)
+    log_dir = os.path.join("log", cell_type + "_" + str(nlayers) + "layers_" + str(args.ncells) + "cells")
     for directory in [checkpoint_dir, log_dir]:
         if not os.path.exists(directory):
             os.makedirs(directory)
@@ -67,9 +66,9 @@ def train_model(model, args, nlayers, cell_type):
 
     np.savetxt(os.path.join(checkpoint_dir, "norm_single_model.csv"), np.array([mean_data, std_data]), delimiter=',')
 
-    params = {'lookback' : args.lookback,
-              'delay' : args.delay,
-              'step' : args.timestep}
+    params = {'lookback': args.lookback,
+              'delay': args.delay,
+              'step': args.timestep}
 
     with open(os.path.join(checkpoint_dir, "params.json"), 'w') as outfile:
         json.dump(params, outfile)
@@ -97,7 +96,7 @@ def train_model(model, args, nlayers, cell_type):
 
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
-    config.gpu_options.per_process_gpu_memory_fraction = 0.45
+    config.gpu_options.per_process_gpu_memory_fraction = 0.5
     k.tensorflow_backend.set_session(tf.Session(config=config))
 
     model.compile(optimizer='adam', loss='mean_squared_error')
@@ -114,6 +113,11 @@ def train_model(model, args, nlayers, cell_type):
                      histogram_freq=0,
                      write_images=True)
 
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss',
+                                  factor=0.2,
+                                  patience=5,
+                                  min_lr=0.001)
+
     # es = EarlyStopping(monitor='val_loss', min_delta=0, patience=0, verbose=0, mode='auto', baseline=None,
     #                    restore_best_weights=False)
 
@@ -122,7 +126,7 @@ def train_model(model, args, nlayers, cell_type):
                                   epochs=args.epochs,
                                   validation_data=val_gen,
                                   validation_steps=val_steps,
-                                  callbacks=[checkpoint, tb])
+                                  callbacks=[checkpoint, tb, reduce_lr])
 
     with open(os.path.join(checkpoint_dir, "history"), 'wb') as file:
         pickle.dump(history.history, file)

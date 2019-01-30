@@ -7,12 +7,13 @@ from train_model import parse_args, train_model
 def main():
     args = parse_args()
 
-    nlayers = 3
+    nlayers = 4
     cell_type = 'LSTM'
 
     net_input = Input(shape=(args.lookback, 2))
 
     x = Dense(300, activation='relu')(net_input)
+    x = LSTM(args.ncells, return_sequences=True, dropout=args.dropout, recurrent_dropout=args.recurrent_dropout)(x)
     x = LSTM(args.ncells, return_sequences=True, dropout=args.dropout, recurrent_dropout=args.recurrent_dropout)(x)
     x = LSTM(args.ncells, dropout=args.dropout, recurrent_dropout=args.recurrent_dropout)(x)
 

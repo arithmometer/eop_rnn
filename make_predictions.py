@@ -18,7 +18,7 @@ def main():
     args = parser.parse_args()
 
     checkpoint_dir = os.path.dirname(args.checkpoint)
-    prefix = os.path.join(*(checkpoint_dir.split(os.path.sep)[-5:]))
+    prefix = os.path.join(*(checkpoint_dir.split(os.path.sep)[-4:]))
     filename = os.path.basename(args.checkpoint).split('.')[0]
 
     predictions_dir = os.path.join("predictions_single_model", prefix, filename)

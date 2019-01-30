@@ -48,6 +48,12 @@ def get_ssa_prediction(eop, start_forecast_mjd, days=365):
     return df[eop][:days]
 
 
+def get_pulkovo_prediction(eop, kind, start_forecast_mjd, days=365):
+    df = pd.read_csv(os.path.join("data", "pul", str(start_forecast_mjd) + "_" + kind + "_pul.txt"), sep='\t',
+                    header=None, skiprows=1, names=["MJD", "x_pole", "y_pole", "LOD", "dX", "dY"])
+    return df[eop][:days]
+
+
 def get_stat(rnn_paths, days=365):
     c04 = pd.read_csv(os.path.join("data", "eopc04_14_IAU2000.62-now.csv"), delimiter=";")
     eops = ["x_pole", "y_pole"]
@@ -71,7 +77,7 @@ def get_stat(rnn_paths, days=365):
             predictions_df[model] = get_rnn_prediction(eops, rnn_paths[model], start_forecast_mjd, days)
 
         # calculate MSE of forecasts for all MJDs and store to pandas table
-        for model in ["ba", "ssa"] + rnn_models:
+        for model in models:
             for eop in eops:
                 mses[model][eop].append(np.mean((real_data_df[eop].values - predictions_df[model][eop].values) ** 2))
 
@@ -104,7 +110,7 @@ def main():
         "GRU4": "predictions_single_model/GRU/4layer/64cells/2019-01-30_18-58-26/model-002"
     }
 
-    days = 365
+    days = 90
 
     df_x, df_y = get_stat(rnn_paths, days)
 
