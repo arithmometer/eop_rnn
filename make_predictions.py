@@ -30,7 +30,7 @@ def main():
 
     norm_data = np.loadtxt(os.path.join(checkpoint_dir, "norm_single_model.csv"), delimiter=",")
 
-    c04 = pd.read_csv("data/eopc04_14_IAU2000.62-now.csv", delimiter=";")
+    c04 = pd.read_csv(os.path.join("data", "eopc04_14_IAU2000.62-now.csv"), delimiter=";")
 
     data = c04[["x_pole", "y_pole"]].values.copy()
 

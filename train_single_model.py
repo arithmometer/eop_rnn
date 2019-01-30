@@ -15,6 +15,12 @@ from ts_helper import mjd_to_row, single_model_generator
 def main():
     # Training settings
     parser = argparse.ArgumentParser(description='EOP prediction using RNN')
+    parser.add_argument('--cell', type=str, default='GRU',
+                        help='recurrent unit type: GRU or LSTM (default: GRU)')
+    parser.add_argument('--nlayers', type=int, default=1, metavar='NL',
+                        help='number of recurrent layers (default: 1)')
+    parser.add_argument('--ncells', type=int, default=64, metavar='NC',
+                        help='number of recurrent units in a layer (default: 64)')
     parser.add_argument('--batch-size', type=int, default=64, metavar='BS',
                         help='input batch size for training (default: 64)')
     parser.add_argument('--epochs', type=int, default=50, metavar='E',
@@ -33,10 +39,14 @@ def main():
                         help='recurrent dropout rate (default: 0.2)')
     args = parser.parse_args()
 
-    c04 = pd.read_csv("data/eopc04_14_IAU2000.62-now.csv", delimiter=";")
+    c04 = pd.read_csv(os.path.join("data", "eopc04_14_IAU2000.62-now.csv"), delimiter=";")
 
     strtime = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    checkpoint_dir = os.path.join("checkpoints_single_model", strtime)
+    checkpoint_dir = os.path.join("checkpoints_single_model",
+                                  "GRU" if args.cell == "GRU" else "LSTM",
+                                  str(args.nlayers) + "layer",
+                                  str(args.ncells) + "cells",
+                                  strtime)
     log_dir = os.path.join("log", strtime)
     for directory in [checkpoint_dir, log_dir]:
         if not os.path.exists(directory):
@@ -91,7 +101,7 @@ def main():
 
     net_input = Input(shape=(args.lookback, 2))
 
-    x = GRU(64, dropout=args.dropout, recurrent_dropout=args.recurrent_dropout)(net_input)
+    x = GRU(args.ncells, dropout=args.dropout, recurrent_dropout=args.recurrent_dropout)(net_input)
     out_x = Dense(args.delay, activation='linear')(x)
     out_y = Dense(args.delay, activation='linear')(x)
     # out_lod = Dense(delay, activation='linear')(x)
