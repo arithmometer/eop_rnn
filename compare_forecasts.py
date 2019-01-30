@@ -49,8 +49,9 @@ def get_ssa_prediction(eop, start_forecast_mjd, days=365):
 
 
 def get_pulkovo_prediction(eop, kind, start_forecast_mjd, days=365):
-    df = pd.read_csv(os.path.join("data", "pul", str(start_forecast_mjd) + "_" + kind + "_pul.txt"), sep='\t',
-                    header=None, skiprows=1, names=["MJD", "x_pole", "y_pole", "LOD", "dX", "dY"])
+    df = pd.read_csv(os.path.join("data", "pul", str(start_forecast_mjd) + "_" + kind + "_pul.txt"),
+                     delim_whitespace=True, header=None, skiprows=1,
+                     names=["MJD", "x_pole", "y_pole", "TAI-UT1", "LOD", "dX", "dY"])
     return df[eop][:days]
 
 
@@ -59,7 +60,7 @@ def get_stat(rnn_paths, days=365):
     eops = ["x_pole", "y_pole"]
 
     rnn_models = list(rnn_paths)
-    models = ["ba", "ssa"] + rnn_models
+    models = ["ba", "ssa", "pul_e1"] + rnn_models
 
     mses = dict()
     for model in models:
@@ -72,6 +73,8 @@ def get_stat(rnn_paths, days=365):
 
         predictions_df["ba"] = get_ba_prediction(eops, start_forecast_mjd, days)
         predictions_df["ssa"] = get_ssa_prediction(eops, start_forecast_mjd, days)
+        # predictions_df["pul_am"] = get_pulkovo_prediction(eops, 'am', start_forecast_mjd, days)
+        predictions_df["pul_e1"] = get_pulkovo_prediction(eops, 'e1', start_forecast_mjd, days)
 
         for model in rnn_models:
             predictions_df[model] = get_rnn_prediction(eops, rnn_paths[model], start_forecast_mjd, days)
@@ -89,7 +92,7 @@ def get_stat(rnn_paths, days=365):
         mses_sorted[model] = dict()
 
     summary = []
-    index = ["Bulletin A", "SSA"] + rnn_models
+    index = ["Bulletin A", "SSA", "Pulkovo E1"] + rnn_models
 
     for eop in eops:
         for model in models:
@@ -106,11 +109,11 @@ def get_stat(rnn_paths, days=365):
 
 def main():
     rnn_paths = {
-        "GRU3": "predictions_single_model/GRU/3layer/64cells/2019-01-30_18-25-17/model-003",
-        "GRU4": "predictions_single_model/GRU/4layer/64cells/2019-01-30_18-58-26/model-002"
+        "GRU3": "predictions_single_model/GRU/3layers/256cells/2019-01-30_20-39-32/model-004",
+        "GRU4": "predictions_single_model/GRU/4layers/256cells/2019-01-30_22-00-11/model-005"
     }
 
-    days = 90
+    days = 30
 
     df_x, df_y = get_stat(rnn_paths, days)
 
