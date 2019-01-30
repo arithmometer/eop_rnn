@@ -42,10 +42,11 @@ def train_model(model, args, nlayers, cell_type):
 
     strtime = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     checkpoint_dir = os.path.join("checkpoints_single_model",
-                                  "GRU" if cell_type == "GRU" else "LSTM",
-                                  str(nlayers) + "layer",
+                                  cell_type,
+                                  str(nlayers) + "layers",
                                   str(args.ncells) + "cells",
-                                  strtime)
+                                  strtime,
+                                  cell_type + str(nlayers) + str(args.ncells))  # last directory for Tensorboard
     log_dir = os.path.join("log", strtime)
     for directory in [checkpoint_dir, log_dir]:
         if not os.path.exists(directory):

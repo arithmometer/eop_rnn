@@ -17,12 +17,11 @@ def main():
                         help='path to checkpoint file for predictions')
     args = parser.parse_args()
 
-    # TODO: use the best (latest) checkpoint in directory if file not specified
     checkpoint_dir = os.path.dirname(args.checkpoint)
-    timestr = os.path.split(checkpoint_dir)[-1]
+    prefix = os.path.join(*(checkpoint_dir.split(os.path.sep)[-5:]))
     filename = os.path.basename(args.checkpoint).split('.')[0]
 
-    predictions_dir = os.path.join("predictions_single_model", timestr, filename)
+    predictions_dir = os.path.join("predictions_single_model", prefix, filename)
     if not os.path.exists(predictions_dir):
         os.makedirs(predictions_dir)
 
