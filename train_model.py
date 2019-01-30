@@ -5,20 +5,16 @@ import os
 import pickle
 import numpy as np
 import pandas as pd
+import tensorflow as tf
 
-from keras.layers import Input, GRU, Dense
-from keras.models import Model
-from keras.callbacks import ModelCheckpoint, TensorBoard
-from ts_helper import mjd_to_row, single_model_generator
+from keras import backend as k
+from keras.callbacks import ModelCheckpoint, TensorBoard, EarlyStopping
+from helpers import mjd_to_row, single_model_generator
 
 
-def main():
+def parse_args():
     # Training settings
     parser = argparse.ArgumentParser(description='EOP prediction using RNN')
-    parser.add_argument('--cell', type=str, default='GRU',
-                        help='recurrent unit type: GRU or LSTM (default: GRU)')
-    parser.add_argument('--nlayers', type=int, default=1, metavar='NL',
-                        help='number of recurrent layers (default: 1)')
     parser.add_argument('--ncells', type=int, default=64, metavar='NC',
                         help='number of recurrent units in a layer (default: 64)')
     parser.add_argument('--batch-size', type=int, default=64, metavar='BS',
@@ -38,13 +34,16 @@ def main():
     parser.add_argument('--recurrent_dropout', type=float, default=0.2, metavar='RD',
                         help='recurrent dropout rate (default: 0.2)')
     args = parser.parse_args()
+    return args
 
+
+def train_model(model, args, nlayers, cell_type):
     c04 = pd.read_csv(os.path.join("data", "eopc04_14_IAU2000.62-now.csv"), delimiter=";")
 
     strtime = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     checkpoint_dir = os.path.join("checkpoints_single_model",
-                                  "GRU" if args.cell == "GRU" else "LSTM",
-                                  str(args.nlayers) + "layer",
+                                  "GRU" if cell_type == "GRU" else "LSTM",
+                                  str(nlayers) + "layer",
                                   str(args.ncells) + "cells",
                                   strtime)
     log_dir = os.path.join("log", strtime)
@@ -54,7 +53,6 @@ def main():
 
     # predict x_pole, y_pole for now
     x = c04[["x_pole", "y_pole"]]
-    # x = c04[["x_pole", "y_pole", "LOD"]]
 
     data = x.values
 
@@ -96,18 +94,11 @@ def main():
     # This is how many steps to draw from val_gen in order to see the whole validation set:
     val_steps = (n_val - 1) // batch_size
 
-    # This is how many steps to draw from test_gen in order to see the whole test set:
-    # test_steps = (n_test - 1) // batch_size
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    config.gpu_options.per_process_gpu_memory_fraction = 0.45
+    k.tensorflow_backend.set_session(tf.Session(config=config))
 
-    net_input = Input(shape=(args.lookback, 2))
-
-    x = GRU(args.ncells, dropout=args.dropout, recurrent_dropout=args.recurrent_dropout)(net_input)
-    out_x = Dense(args.delay, activation='linear')(x)
-    out_y = Dense(args.delay, activation='linear')(x)
-    # out_lod = Dense(delay, activation='linear')(x)
-
-    # model = Model(inputs=net_input, outputs=[out_x, out_y, out_lod])
-    model = Model(inputs=net_input, outputs=[out_x, out_y])
     model.compile(optimizer='adam', loss='mean_squared_error')
 
     print(model.summary())
@@ -122,6 +113,9 @@ def main():
                      histogram_freq=0,
                      write_images=True)
 
+    # es = EarlyStopping(monitor='val_loss', min_delta=0, patience=0, verbose=0, mode='auto', baseline=None,
+    #                    restore_best_weights=False)
+
     history = model.fit_generator(train_gen,
                                   steps_per_epoch=args.steps,
                                   epochs=args.epochs,
@@ -133,7 +127,3 @@ def main():
         pickle.dump(history.history, file)
 
     print("Done.")
-
-
-if __name__ == '__main__':
-    main()

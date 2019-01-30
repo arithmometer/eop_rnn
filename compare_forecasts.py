@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from tqdm import tqdm
-from ts_helper import mjd_to_row
+from helpers import mjd_to_row
 
 
 def get_real_data(eop, c04, start_mjd, days=365):
@@ -89,9 +89,10 @@ def get_stat(path):
         ba_mses_sorted[eop] = np.sort(ba_mses[eop])
         ssa_mses_sorted[eop] = np.sort(ssa_mses[eop])
 
-        summary.append(pd.DataFrame({"Average MSE": [rnn_mean_error[eop], ba_mean_error[eop]],
+        summary.append(pd.DataFrame({"Average MSE": [rnn_mean_error[eop], ba_mean_error[eop], ssa_mean_error[eop]],
                                      "95% interval": [(rnn_mses_sorted[eop][5 - 1], rnn_mses_sorted[eop][95 - 1]),
-                                                      (ba_mses_sorted[eop][5 - 1], ba_mses_sorted[eop][95 - 1])]},
+                                                      (ba_mses_sorted[eop][5 - 1], ba_mses_sorted[eop][95 - 1]),
+                                                      (ssa_mses_sorted[eop][5 - 1], ssa_mses_sorted[eop][95 - 1])]},
                                      index=index))
 
     return summary

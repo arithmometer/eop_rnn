@@ -2,26 +2,26 @@
 
 ## Single model
 
-Single model that predicts 2 (`x_pole`, `y_pole`) time series at once. Recurrent GRU model is trained using dropout that
-can be specified via `dropout` and `recurrent_dropout` parameters of the script. 
+Single model that predicts 2 (`x_pole`, `y_pole`) time series at once. Recurrent model is trained using dropout that
+can be specified via `dropout` and `recurrent_dropout` parameters of the script. Number of units in recurrent layers
+can be specified via `ncells`.
 
-First train a network:
-
-```
-python train_single_model.py
-```
-
-or
+First train a network (parameters can be specified):
 
 ```
-python train_single_model.py --dropout=0.2 --recurrent_dropout=0.2
+python model_dense_GRU2.py --dropout=0.5 --recurrent_dropout=0.5 --ncells=128
 ```
 
-Set environment variable `CUDA_VISIBLE_DEVICES` to specify GPU device to use:
+Set environment variable `CUDA_VISIBLE_DEVICES` to specify GPU device to use or choose another model:
 
 ```
-env CUDA_VISIBLE_DEVICES=0 python train_single_model.py
+env CUDA_VISIBLE_DEVICES=0 python model_dense_LSTM3.py
 ```
+
+Two models can run on the same GPU if they both fit into GPU memory.
+
+A new model can be created in a distinct file, import `train_model` and `parse_args` utils from `train_model.py` to
+unify your runs. New model should specify
 
 Each run creates a separate directory in `checkpoints_single_model` named with a timestamp to store best checkpoints and
 corresponding parameters.
@@ -31,12 +31,6 @@ Training process of all runs can be tracked using Tensorboard in a separate term
 ```
 tensorboard --logdir log
 ```
-
-## Fully connected model
-
-TODO
-
-Anosova N. P. "Using neural networks for EOP time series prediction" (in Russian).
 
 ## Make predictions
 
@@ -48,11 +42,13 @@ python make_predictions.py --checkpoint checkpoints_single_model/2019-01-30_01-1
 
 ## Compare forecasts
 
-TODO
+TODO: compare different RNN models.
+
+For now paths to different RNN predictions will be hardcoded.
+
+Use `compare_forecasts.py` script.
 
 Compare RNN forecasts with:
 * Bulletin A forecasts;
 * Pulkovo observatory forecasts;
-* FC network results;
 * SSA forecasts.
-

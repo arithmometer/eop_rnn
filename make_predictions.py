@@ -6,7 +6,7 @@ import pandas as pd
 
 from tqdm import tqdm
 from keras.models import load_model
-from ts_helper import mjd_to_row, single_model_generator
+from helpers import mjd_to_row, single_model_generator
 
 
 def main():
