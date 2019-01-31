@@ -19,8 +19,8 @@ def parse_args():
                         help='number of recurrent units in a layer (default: 256)')
     parser.add_argument('--batch-size', type=int, default=64, metavar='BS',
                         help='input batch size for training (default: 64)')
-    parser.add_argument('--epochs', type=int, default=50, metavar='E',
-                        help='number of epochs to train (default: 50)')
+    parser.add_argument('--epochs', type=int, default=100, metavar='E',
+                        help='number of epochs to train (default: 100)')
     parser.add_argument('--steps', type=int, default=100, metavar='S',
                         help='number of steps per epoch (default: 100)')
     parser.add_argument('--lookback', type=int, default=860, metavar='L',
@@ -46,7 +46,7 @@ def train_model(model, args, nlayers, cell_type):
                                   str(nlayers) + "layers",
                                   str(args.ncells) + "cells",
                                   strtime)
-    log_dir = os.path.join("log", cell_type + "_" + str(nlayers) + "layers_" + str(args.ncells) + "cells")
+    log_dir = os.path.join("log", cell_type + "_" + str(nlayers) + "layers_" + str(args.ncells) + "cells_" + str(args.lookback) + "back")
     for directory in [checkpoint_dir, log_dir]:
         if not os.path.exists(directory):
             os.makedirs(directory)
@@ -114,9 +114,10 @@ def train_model(model, args, nlayers, cell_type):
                      write_images=True)
 
     reduce_lr = ReduceLROnPlateau(monitor='val_loss',
-                                  factor=0.2,
-                                  patience=5,
-                                  min_lr=0.001)
+                                  factor=0.8,
+                                  patience=10,
+                                  verbose=1,
+                                  min_lr=0.0002)
 
     # es = EarlyStopping(monitor='val_loss', min_delta=0, patience=0, verbose=0, mode='auto', baseline=None,
     #                    restore_best_weights=False)
