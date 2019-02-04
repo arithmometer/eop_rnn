@@ -109,8 +109,7 @@ def get_stat(rnn_paths, days=365):
 
 def main():
     rnn_paths = {
-        "GRU3": "predictions_single_model/GRU/3layers/256cells/2019-01-30_20-39-32/model-004",
-        "GRU4": "predictions_single_model/GRU/4layers/256cells/2019-01-30_22-00-11/model-005"
+        "GRU5": ""
     }
 
     days = 30
