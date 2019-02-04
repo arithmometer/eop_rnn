@@ -17,8 +17,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description='EOP prediction using RNN')
     parser.add_argument('--ncells', type=int, default=256, metavar='NC',
                         help='number of recurrent units in a layer (default: 256)')
-    parser.add_argument('--batch-size', type=int, default=64, metavar='BS',
-                        help='input batch size for training (default: 64)')
+    parser.add_argument('--batch-size', type=int, default=100, metavar='BS',
+                        help='input batch size for training (default: 100)')
     parser.add_argument('--epochs', type=int, default=100, metavar='E',
                         help='number of epochs to train (default: 100)')
     parser.add_argument('--steps', type=int, default=100, metavar='S',
