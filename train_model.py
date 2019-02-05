@@ -15,6 +15,8 @@ from helpers import mjd_to_row, single_model_generator
 def parse_args():
     # Training settings
     parser = argparse.ArgumentParser(description='EOP prediction using RNN')
+    parser.add_argument('--memory', type=float, default=0.5, metavar='D',
+                        help='GPU memory limits (default: 0.5)')
     parser.add_argument('--ncells', type=int, default=256, metavar='NC',
                         help='number of recurrent units in a layer (default: 256)')
     parser.add_argument('--batch-size', type=int, default=128, metavar='BS',
@@ -57,7 +59,9 @@ def train_model(model, args, nlayers, cell_type):
     data = x.values
 
     n_train = mjd_to_row(56292)  # 31.12.2012 (end of training period)
-    n_val = mjd_to_row(57022) - mjd_to_row(56292)  # 31.12.2012 - 31.12.2014 (validation period)
+    val_years = 2
+    # n_val = mjd_to_row(57022) - mjd_to_row(56292)  # 01.01.2013 - 31.12.2014 (validation period)
+    n_val = 365 * val_years
 
     mean_data = data[:n_train].mean(axis=0)  # calculate on train data
     data -= mean_data  # transform all data
@@ -96,7 +100,7 @@ def train_model(model, args, nlayers, cell_type):
 
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
-    config.gpu_options.per_process_gpu_memory_fraction = 0.5
+    config.gpu_options.per_process_gpu_memory_fraction = args.memory
     k.tensorflow_backend.set_session(tf.Session(config=config))
 
     model.compile(optimizer='adam', loss='mean_squared_error')
